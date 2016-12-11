@@ -19,11 +19,8 @@ import java.util.List;
  */
 public class Main extends JFrame implements ActionListener {
 
-    private static final Integer[] ETALON;
     private static final Integer[] ETALON_SECOND;
     private static final int RIGHTANGLE = 90;
-    private static boolean changeEtalonForChart = false;
-    private static boolean changeEtalonForDetected = false;
     private static Thread threadGrafic;
 
     static {
@@ -41,11 +38,6 @@ public class Main extends JFrame implements ActionListener {
         } catch (IOException e) {
             System.out.println("Что - то с загрузкой файла.");
         }
-        strValues = fileOut[0].split(" ");
-        for (int i = 0; i < strValues.length; i++) {
-            intValue[i] = Integer.valueOf(strValues[i]);
-        }
-        ETALON = intValue;
 
         strValues = fileOut[1].split(" ");
         for (int i = 0; i < strValues.length; i++) {
@@ -155,19 +147,9 @@ public class Main extends JFrame implements ActionListener {
         }
 
         XYSeries series2 = new XYSeries("serial2");
-        // какого - то ... происходит смещение эталонных графиков
-//        //if (changeEtalonForChart) {
-//            for (int i = 0; i < ETALON.length; i++) {
-//                series2.add(i, ETALON[i]);
-//            }
-//            changeEtalonForChart = !changeEtalonForChart;
-//       // }
-//        else {
             for (int i = 0; i < ETALON_SECOND.length; i++) {
                 series2.add(i, ETALON_SECOND[i]);
             }
-//            changeEtalonForChart = !changeEtalonForChart;
-//        }
 
         XYSeriesCollection xyDataset = new XYSeriesCollection();
         xyDataset.addSeries(series1);
@@ -189,18 +171,7 @@ public class Main extends JFrame implements ActionListener {
     }
 
     static boolean detected(Integer[] result) {
-//        if (changeEtalonForDetected) {
-//            if (searchItem(result, ETALON)) {
-//                return true;
-//            }
-//            changeEtalonForDetected = !changeEtalonForDetected;
-//        } else {
-            if (searchItem(result, ETALON_SECOND)) {
-                return true;
-            }
-//            changeEtalonForDetected = !changeEtalonForDetected;
-//        }
-        return false;
+        return searchItem(result, ETALON_SECOND);
     }
 
     private static boolean searchItem(Integer[] result, Integer[] etalon) {
@@ -285,7 +256,6 @@ class ThreadGrafic extends Thread {
             if (!Thread.interrupted()) {
                 for (ArrayList<Integer> aListResult : listResult) {
                     Main.createChart(aListResult, frame, chartPanel);
-                    // jLabel.setText(String.valueOf(i+=0.5));
                 }
             }
         } catch (InterruptedException e) {
