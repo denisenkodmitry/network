@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="fannj-0.6">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/fannj-0.6.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jna-4.1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
