@@ -1,3 +1,4 @@
+import com.googlecode.fannj.*;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -7,6 +8,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.Test;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
@@ -50,16 +52,29 @@ public class Main extends JFrame implements ActionListener {
         createGUI();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.setProperty("jna.library.path", "C:\\Users\\superuser\\Downloads\\FANN-2.2.0-Source\\FANN-2.2.0-Source\\bin\\");
 
         System.out.println(System.getProperty("jna.library.path")); //maybe the path is malformed
         File file = new File(System.getProperty("jna.library.path") + "fannfloat.dll");
         System.out.println("Is the dll file there:" + file.exists());
         System.load(file.getAbsolutePath());
+//        List<Layer> layerList = new ArrayList<Layer>();
+//        layerList.add(Layer.create(841, ActivationFunction.FANN_ELLIOT_SYMMETRIC, 0.01f));
+//        layerList.add(Layer.create(30, ActivationFunction.FANN_ELLIOT_SYMMETRIC, 0.01f));
+//        layerList.add(Layer.create(1, ActivationFunction.FANN_ELLIOT_SYMMETRIC, 0.01f));
+//        Fann fann = new Fann(layerList);
+//        //Создаем тренера и определяем алгоритм обучения
+//        Trainer trainer = new Trainer(fann);
+//        trainer.setTrainingAlgorithm(TrainingAlgorithm.FANN_TRAIN_RPROP);
+//        /* Проведем обучение взяв уроки из файла, с максимальным колличеством
+//           циклов 100000, показывая отчет каждую 100ю итерацию и добиваемся
+//        ошибки меньше 0.0001 */
+//        trainer.train(new File("select.data").getAbsolutePath(), 10000, 1, 0.013f);
+//        fann.save("ann");
 
         final List<ArrayList<Integer>> listResult = new ArrayList<>();
-        BufferedReader reader = getReaderFromFile("yes.txt");
+        BufferedReader reader = getReaderFromFile("test4.txt");
         parseDataFromFile(listResult, reader, false);
         final Main frame = new Main();
 
@@ -89,7 +104,10 @@ public class Main extends JFrame implements ActionListener {
                 // Есть сляб или нет
                 writerYes = new BufferedWriter(new FileWriter(new File("yes.txt")));
                 writerNo = new BufferedWriter(new FileWriter(new File("no.txt")));
-                writerSelect = new BufferedWriter(new FileWriter(new File("select.txt")));
+                writerSelect = new BufferedWriter(new FileWriter(new File("select.data")));
+
+                writerSelect.write("7199 841 1");
+                writerSelect.write("\r\n");
             }
             while (reader != null && reader.ready()) {
                 line = reader.readLine();
@@ -128,7 +146,9 @@ public class Main extends JFrame implements ActionListener {
                                 writerSelect.write(" ");
                             }
                         }
-                        //writerSelect.write("1");
+                        writerSelect.write("\r\n");
+                        writerSelect.write("1");
+                        writerSelect.write("\r\n");
                     } else {
                         writerNo.write(line);
                         writerNo.write("\r\n");
@@ -138,10 +158,12 @@ public class Main extends JFrame implements ActionListener {
                                 writerSelect.write(" ");
                             }
                         }
-                        //writerSelect.write("0");
+                        writerSelect.write("\r\n");
+                        writerSelect.write("0");
+                        writerSelect.write("\r\n");
                     }
                 }
-                writerSelect.write("\r\n");
+
             }
             if (reader != null) {
                 reader.close();
@@ -150,9 +172,11 @@ public class Main extends JFrame implements ActionListener {
             System.out.println("wtf?!");
         } finally {
             try {
-                writerYes.close();
-                writerNo.close();
-                writerSelect.close();
+                if (test) {
+                    writerYes.close();
+                    writerNo.close();
+                    writerSelect.close();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -170,7 +194,39 @@ public class Main extends JFrame implements ActionListener {
         return reader;
     }
 
-    static void createChart(List<Integer> lineResult, JFrame frame, ChartPanel chartPanel) throws InterruptedException {
+    private static boolean detectedForTest(float runResult) {
+        return Math.abs(runResult) > 0.3;
+    }
+
+    static void createChart(List<Integer> lineResult, JFrame frame, ChartPanel chartPanel, JLabel label) throws InterruptedException {
+        // тут мы нашу сеточку применяем
+        Fann fann = new Fann("ann");
+        // опять не по уму, но придется преобразовать этот лист в массив флоат
+        float[] resultFloat = new float[lineResult.size()];
+        for (int i = 0; i < resultFloat.length; i++) {
+            resultFloat[i] = lineResult.get(i);
+        }
+        float runResult = fann.run(resultFloat)[0];
+        String labelText;
+        Color color;
+        if (detectedForTest(runResult)) {
+            labelText = "+";
+            color = Color.GREEN;
+            System.out.println("+: " + runResult);
+        } else {
+            labelText = "-";
+            color = Color.RED;
+            System.out.println("-: " + runResult);
+        }
+
+        label.setText(labelText);
+        Font font = new Font("Verdana", Font.PLAIN, 24);
+        label.setVisible(true);
+        label.setSize(30, 30);
+        label.setFont(font);
+        label.setForeground(color);
+        label.setVerticalAlignment(JLabel.CENTER);
+        label.setHorizontalAlignment(JLabel.CENTER);
         XYSeries series1 = new XYSeries("serial1");
 
         for (int i = 0; i < lineResult.size(); i++) {
@@ -193,10 +249,10 @@ public class Main extends JFrame implements ActionListener {
 
         // chartPanel.repaint();
         chartPanel.setChart(chart);
+        frame.getContentPane().add(label);
         frame.getContentPane()
                 .add(chartPanel);
-
-        Thread.sleep(100);
+        Thread.sleep(500);
 
         SwingUtilities.updateComponentTreeUI(frame);
     }
@@ -269,10 +325,7 @@ class ThreadGrafic extends Thread {
     private List<ArrayList<Integer>> listResult;
     private JFrame frame;
     private ChartPanel chartPanel;
-
-    public ThreadGrafic() {
-
-    }
+    private JLabel label = new JLabel();
 
     ThreadGrafic(List<ArrayList<Integer>> listResult, JFrame frame, ChartPanel chartPanel) {
         this.listResult = listResult;
@@ -286,7 +339,7 @@ class ThreadGrafic extends Thread {
         try {
             if (!Thread.interrupted()) {
                 for (ArrayList<Integer> aListResult : listResult) {
-                    Main.createChart(aListResult, frame, chartPanel);
+                    Main.createChart(aListResult, frame, chartPanel, label);
                 }
             }
         } catch (InterruptedException e) {
